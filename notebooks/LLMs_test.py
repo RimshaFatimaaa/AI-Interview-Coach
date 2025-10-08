@@ -229,13 +229,25 @@ def generate_question(round_type: str = "hr", context: Optional[str] = None) -> 
     """
     round_type = round_type.lower()
     
-    # Get OpenAI key dynamically
-    current_openai_key = get_openai_key()
+    # Force OpenAI usage - get key from environment
+    current_openai_key = os.getenv("OPENAI_API_KEY")
     logger.info(f"Generating {round_type} question. OpenAI key available: {bool(current_openai_key)}")
+    
+    # If no key in environment, try to get from Streamlit secrets
+    if not current_openai_key:
+        try:
+            import streamlit as st
+            current_openai_key = st.secrets.get("OPENAI_API_KEY")
+            logger.info(f"Got key from Streamlit secrets: {bool(current_openai_key)}")
+        except Exception as e:
+            logger.warning(f"Could not get key from Streamlit secrets: {e}")
     
     if current_openai_key and openai:
         try:
             logger.info("Using OpenAI for question generation")
+            # Temporarily set the global key for the OpenAI function
+            global OPENAI_KEY
+            OPENAI_KEY = current_openai_key
             q = _generate_question_openai(round_type, context)
             return {"question": normalize_text(q), "source": "openai"}
         except Exception as e:

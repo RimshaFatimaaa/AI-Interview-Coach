@@ -266,6 +266,12 @@ def main():
                 # Debug: Show what we're trying to generate
                 st.write(f"🔍 Debug: Generating {question_type} question for {difficulty} level")
                 
+                # Debug: Check API key availability
+                api_key = os.getenv("OPENAI_API_KEY")
+                st.write(f"🔍 Debug: API key available: {bool(api_key)}")
+                if api_key:
+                    st.write(f"🔍 Debug: API key starts with: {api_key[:20]}...")
+                
                 # Use LangChain processor
                 langchain_processor = LangChainInterviewProcessor(use_openai=True)
                 question_result = langchain_processor.generate_question_langchain(
