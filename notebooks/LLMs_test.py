@@ -166,37 +166,56 @@ def _generate_question_openai(round_type: str, context: Optional[str] = None) ->
     """
     assert openai is not None, "OpenAI library not available."
     
-    # Get the key dynamically
-    current_key = get_openai_key()
+    # Get the key from environment variable
+    current_key = os.getenv("OPENAI_API_KEY")
+    if not current_key:
+        # Try Streamlit secrets as fallback
+        try:
+            import streamlit as st
+            current_key = st.secrets.get("OPENAI_API_KEY")
+        except:
+            pass
+    
     if not current_key:
         raise ValueError("OpenAI API key not available")
     
     # Create specific prompts for different question types
-    if round_type.lower() == "hr_behavioral" or round_type.lower() == "hr":
-        prompt = "Generate a behavioral interview question that asks about past experiences, challenges, teamwork, or leadership. Examples: 'Tell me about a time when...', 'Describe a situation where...', 'Give me an example of...'"
+    if round_type.lower() in ["hr_behavioral", "hr"]:
+        system_prompt = "You are an expert interviewer. Generate behavioral interview questions that ask about past experiences, challenges, teamwork, or leadership."
+        user_prompt = "Generate one behavioral interview question. Use phrases like 'Tell me about a time when...', 'Describe a situation where...', or 'Give me an example of...'. Return only the question text."
     elif round_type.lower() == "technical":
-        prompt = "Generate a technical interview question about programming, problem-solving, algorithms, system design, or software engineering concepts."
+        system_prompt = "You are an expert technical interviewer. Generate technical interview questions about programming, problem-solving, algorithms, or software engineering."
+        user_prompt = "Generate one technical interview question about programming, algorithms, system design, or software engineering concepts. Return only the question text."
     else:
-        prompt = f"Generate a {round_type} interview question."
+        system_prompt = "You are an expert interviewer."
+        user_prompt = f"Generate one {round_type} interview question. Return only the question text."
     
     if context:
-        prompt += f" Context: {context}"
-    prompt += " Return only the question text, no additional explanation."
+        user_prompt += f" Context: {context}"
 
     logger.info("Calling OpenAI to generate question...")
     
-    # Use the new OpenAI client API (v1.0+)
-    client = openai.OpenAI(api_key=current_key)
-    resp = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role":"system","content":"You generate single interview questions."},
-                  {"role":"user","content":prompt}],
-        temperature=0.7,
-        max_tokens=120,
-    )
-    # Try to extract text
-    text = resp.choices[0].message.content.strip()
-    return text
+    try:
+        # Use the new OpenAI client API (v1.0+)
+        client = openai.OpenAI(api_key=current_key)
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.8,
+            max_tokens=150,
+        )
+        
+        # Extract text
+        text = resp.choices[0].message.content.strip()
+        logger.info(f"OpenAI generated: {text}")
+        return text
+        
+    except Exception as e:
+        logger.error(f"OpenAI API call failed: {e}")
+        raise e
 
 def _generate_question_local(round_type: str, context: Optional[str] = None) -> str:
     """
@@ -245,13 +264,12 @@ def generate_question(round_type: str = "hr", context: Optional[str] = None) -> 
     if current_openai_key and openai:
         try:
             logger.info("Using OpenAI for question generation")
-            # Temporarily set the global key for the OpenAI function
-            global OPENAI_KEY
-            OPENAI_KEY = current_openai_key
             q = _generate_question_openai(round_type, context)
+            logger.info(f"Successfully generated question: {q[:100]}...")
             return {"question": normalize_text(q), "source": "openai"}
         except Exception as e:
-            logger.warning("OpenAI generation failed, falling back to local. Error: %s", e)
+            logger.error(f"OpenAI generation failed with error: {str(e)}")
+            logger.warning("Falling back to local model")
     else:
         logger.info("OpenAI not available, using local model")
     

@@ -272,6 +272,19 @@ def main():
                 if api_key:
                     st.write(f"🔍 Debug: API key starts with: {api_key[:20]}...")
                 
+                # Test OpenAI connection
+                try:
+                    import openai
+                    client = openai.OpenAI(api_key=api_key)
+                    test_response = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[{"role": "user", "content": "Say 'OpenAI connection test successful'"}],
+                        max_tokens=10
+                    )
+                    st.write(f"🔍 Debug: OpenAI test successful: {test_response.choices[0].message.content}")
+                except Exception as e:
+                    st.write(f"🔍 Debug: OpenAI test failed: {str(e)}")
+                
                 # Use LangChain processor
                 langchain_processor = LangChainInterviewProcessor(use_openai=True)
                 question_result = langchain_processor.generate_question_langchain(
