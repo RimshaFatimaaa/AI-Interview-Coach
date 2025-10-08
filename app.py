@@ -263,37 +263,12 @@ def main():
     if st.button("🎯 Generate Question", type="primary"):
         with st.spinner("Generating question..."):
             try:
-                # Debug: Show what we're trying to generate
-                st.write(f"🔍 Debug: Generating {question_type} question for {difficulty} level")
-                
-                # Debug: Check API key availability
-                api_key = os.getenv("OPENAI_API_KEY")
-                st.write(f"🔍 Debug: API key available: {bool(api_key)}")
-                if api_key:
-                    st.write(f"🔍 Debug: API key starts with: {api_key[:20]}...")
-                
-                # Test OpenAI connection
-                try:
-                    import openai
-                    client = openai.OpenAI(api_key=api_key)
-                    test_response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[{"role": "user", "content": "Say 'OpenAI connection test successful'"}],
-                        max_tokens=10
-                    )
-                    st.write(f"🔍 Debug: OpenAI test successful: {test_response.choices[0].message.content}")
-                except Exception as e:
-                    st.write(f"🔍 Debug: OpenAI test failed: {str(e)}")
-                
                 # Use LangChain processor
                 langchain_processor = LangChainInterviewProcessor(use_openai=True)
                 question_result = langchain_processor.generate_question_langchain(
                     round_type=question_type,
                     context=f"Software Engineer with {difficulty} level experience"
                 )
-                
-                # Debug: Show the result source
-                st.write(f"🔍 Debug: Question source: {question_result.get('source', 'unknown')}")
                 
                 # Create a simple question object for compatibility
                 class SimpleQuestion:
