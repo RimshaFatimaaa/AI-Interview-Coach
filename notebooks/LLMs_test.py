@@ -145,10 +145,18 @@ def _generate_question_openai(round_type: str, context: Optional[str] = None) ->
     Generate a question using OpenAI Chat API (if available).
     """
     assert openai is not None, "OpenAI library not available."
-    prompt = f"You are an interview question generator. Produce one concise {round_type} interview question."
+    
+    # Create specific prompts for different question types
+    if round_type.lower() == "hr_behavioral" or round_type.lower() == "hr":
+        prompt = "Generate a behavioral interview question that asks about past experiences, challenges, teamwork, or leadership. Examples: 'Tell me about a time when...', 'Describe a situation where...', 'Give me an example of...'"
+    elif round_type.lower() == "technical":
+        prompt = "Generate a technical interview question about programming, problem-solving, algorithms, system design, or software engineering concepts."
+    else:
+        prompt = f"Generate a {round_type} interview question."
+    
     if context:
         prompt += f" Context: {context}"
-    prompt += " Keep the question clear and relevant to the candidate's skills. Return only the question."
+    prompt += " Return only the question text, no additional explanation."
 
     logger.info("Calling OpenAI to generate question...")
     
@@ -170,10 +178,19 @@ def _generate_question_local(round_type: str, context: Optional[str] = None) -> 
     Generate a question using local FLAN-T5 text2text pipeline.
     """
     pipe = safe_load_generation_pipeline()
-    prompt = f"Generate one short {round_type} interview question."
+    
+    # Create specific prompts for different question types
+    if round_type.lower() == "hr_behavioral" or round_type.lower() == "hr":
+        prompt = "Generate a behavioral interview question about past experiences, challenges, teamwork, or leadership."
+    elif round_type.lower() == "technical":
+        prompt = "Generate a technical interview question about programming, problem-solving, or software engineering."
+    else:
+        prompt = f"Generate a {round_type} interview question."
+    
     if context:
         prompt += f" Context: {context}"
     prompt += " Keep it concise. Output only the question."
+    
     logger.info("Generating question with local model...")
     out = pipe(prompt, max_length=128, do_sample=False)
     text = out[0]["generated_text"].strip()

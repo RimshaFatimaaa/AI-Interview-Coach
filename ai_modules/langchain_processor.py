@@ -41,9 +41,15 @@ class LangChainInterviewProcessor:
         """
         Creates a chain that generates interview questions using the latest ChatOpenAI.
         """
-        template = """You are an AI interviewer generating {round_type} interview questions.
+        template = """You are an expert interviewer generating {round_type} interview questions.
+
+For HR/Behavioral questions: Generate questions that ask about past experiences, challenges, teamwork, leadership, or problem-solving. Use phrases like "Tell me about a time when...", "Describe a situation where...", "Give me an example of...".
+
+For Technical questions: Generate questions about programming, algorithms, system design, problem-solving, or software engineering concepts.
+
 Candidate context: {context}
-Generate one clear and concise question. Return only the question text."""
+
+Generate one clear, specific, and relevant interview question. Return only the question text, no additional explanation."""
 
         prompt = PromptTemplate(
             input_variables=["round_type", "context"],
