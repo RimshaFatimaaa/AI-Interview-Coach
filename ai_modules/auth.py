@@ -135,6 +135,11 @@ def init_session_state():
 
 def check_auth_status():
     """Check and update authentication status"""
+    # First check if we already have session state authentication
+    if st.session_state.get('authenticated', False):
+        return True
+    
+    # If not, check with Supabase
     auth_manager = AuthManager()
     is_auth = auth_manager.is_authenticated()
     

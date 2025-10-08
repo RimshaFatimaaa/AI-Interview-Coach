@@ -194,6 +194,16 @@ def main():
     # Initialize session state
     init_session_state()
     
+    # Handle logout
+    if st.query_params.get("logout") == "true":
+        auth_manager = AuthManager()
+        auth_manager.sign_out()
+        st.session_state.authenticated = False
+        st.session_state.user_email = None
+        st.session_state.user_name = None
+        st.query_params.clear()
+        st.rerun()
+    
     # Check authentication
     is_authenticated = check_auth_status()
     if not is_authenticated:
