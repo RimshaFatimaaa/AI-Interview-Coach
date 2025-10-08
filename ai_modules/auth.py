@@ -15,14 +15,24 @@ load_dotenv()
 class AuthManager:
     def __init__(self):
         """Initialize Supabase client"""
-        self.url = os.getenv("SUPABASE_URL")
-        self.key = os.getenv("SUPABASE_ANON_KEY")
+        # Try to get from Streamlit secrets first, then environment variables
+        try:
+            self.url = st.secrets.get("SUPABASE_URL") or os.getenv("SUPABASE_URL")
+            self.key = st.secrets.get("SUPABASE_ANON_KEY") or os.getenv("SUPABASE_ANON_KEY")
+        except:
+            # Fallback to environment variables if secrets not available
+            self.url = os.getenv("SUPABASE_URL")
+            self.key = os.getenv("SUPABASE_ANON_KEY")
         
         if not self.url or not self.key:
-            st.error("⚠️ Supabase credentials not found. Please set SUPABASE_URL and SUPABASE_ANON_KEY in your .env file")
+            st.error("⚠️ Supabase credentials not found. Please set SUPABASE_URL and SUPABASE_ANON_KEY in Streamlit Cloud secrets or .env file")
             self.client = None
         else:
-            self.client: Client = create_client(self.url, self.key)
+            try:
+                self.client: Client = create_client(self.url, self.key)
+            except Exception as e:
+                st.error(f"⚠️ Failed to initialize Supabase client: {str(e)}")
+                self.client = None
     
     def sign_up(self, email: str, password: str, full_name: str = None) -> dict:
         """Sign up a new user"""
