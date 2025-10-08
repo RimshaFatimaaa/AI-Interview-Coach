@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Set OpenAI API key from Streamlit secrets
+# Set OpenAI API key from Streamlit secrets BEFORE importing other modules
 try:
     openai_key = st.secrets["OPENAI_API_KEY"]
     # Set the environment variable for other modules
@@ -19,6 +19,8 @@ try:
 except KeyError:
     st.error("⚠️ OPENAI_API_KEY not found. Please set it in Streamlit Cloud secrets.")
     st.stop()
+
+# Now import modules that need the API key
 from ai_modules.nlp_processor import process_interview_response, NLPProcessor
 from ai_modules.llm_processor_simple import SimpleLLMProcessor, QuestionType, DifficultyLevel
 from ai_modules.langchain_processor import LangChainInterviewProcessor

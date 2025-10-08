@@ -53,7 +53,17 @@ except Exception:
     pipeline = None
 
 # ---------- Configuration ----------
+# Try to get OpenAI key from environment or Streamlit secrets
 OPENAI_KEY = os.getenv("OPENAI_API_KEY", None)
+
+# If not found in environment, try Streamlit secrets (for Streamlit Cloud)
+if not OPENAI_KEY:
+    try:
+        import streamlit as st
+        OPENAI_KEY = st.secrets.get("OPENAI_API_KEY")
+    except:
+        pass
+
 if OPENAI_KEY and openai:
     openai.api_key = OPENAI_KEY
 
@@ -203,13 +213,20 @@ def generate_question(round_type: str = "hr", context: Optional[str] = None) -> 
     round_type: "hr" or "technical"
     """
     round_type = round_type.lower()
+    logger.info(f"Generating {round_type} question. OpenAI key available: {bool(OPENAI_KEY)}")
+    
     if OPENAI_KEY and openai:
         try:
+            logger.info("Using OpenAI for question generation")
             q = _generate_question_openai(round_type, context)
             return {"question": normalize_text(q), "source": "openai"}
         except Exception as e:
             logger.warning("OpenAI generation failed, falling back to local. Error: %s", e)
+    else:
+        logger.info("OpenAI not available, using local model")
+    
     # fallback to local
+    logger.info("Using local FLAN-T5 for question generation")
     q = _generate_question_local(round_type, context)
     return {"question": normalize_text(q), "source": "local_flan_t5"}
 
