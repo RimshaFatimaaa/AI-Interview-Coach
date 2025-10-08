@@ -53,16 +53,26 @@ except Exception:
     pipeline = None
 
 # ---------- Configuration ----------
-# Try to get OpenAI key from environment or Streamlit secrets
-OPENAI_KEY = os.getenv("OPENAI_API_KEY", None)
-
-# If not found in environment, try Streamlit secrets (for Streamlit Cloud)
-if not OPENAI_KEY:
+def get_openai_key():
+    """Get OpenAI key from environment or Streamlit secrets"""
+    # Try environment variable first
+    key = os.getenv("OPENAI_API_KEY", None)
+    if key:
+        return key
+    
+    # Try Streamlit secrets
     try:
         import streamlit as st
-        OPENAI_KEY = st.secrets.get("OPENAI_API_KEY")
+        key = st.secrets.get("OPENAI_API_KEY")
+        if key:
+            return key
     except:
         pass
+    
+    return None
+
+# Get the key dynamically
+OPENAI_KEY = get_openai_key()
 
 if OPENAI_KEY and openai:
     openai.api_key = OPENAI_KEY
@@ -156,6 +166,11 @@ def _generate_question_openai(round_type: str, context: Optional[str] = None) ->
     """
     assert openai is not None, "OpenAI library not available."
     
+    # Get the key dynamically
+    current_key = get_openai_key()
+    if not current_key:
+        raise ValueError("OpenAI API key not available")
+    
     # Create specific prompts for different question types
     if round_type.lower() == "hr_behavioral" or round_type.lower() == "hr":
         prompt = "Generate a behavioral interview question that asks about past experiences, challenges, teamwork, or leadership. Examples: 'Tell me about a time when...', 'Describe a situation where...', 'Give me an example of...'"
@@ -171,7 +186,7 @@ def _generate_question_openai(round_type: str, context: Optional[str] = None) ->
     logger.info("Calling OpenAI to generate question...")
     
     # Use the new OpenAI client API (v1.0+)
-    client = openai.OpenAI(api_key=OPENAI_KEY)
+    client = openai.OpenAI(api_key=current_key)
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role":"system","content":"You generate single interview questions."},
@@ -213,9 +228,12 @@ def generate_question(round_type: str = "hr", context: Optional[str] = None) -> 
     round_type: "hr" or "technical"
     """
     round_type = round_type.lower()
-    logger.info(f"Generating {round_type} question. OpenAI key available: {bool(OPENAI_KEY)}")
     
-    if OPENAI_KEY and openai:
+    # Get OpenAI key dynamically
+    current_openai_key = get_openai_key()
+    logger.info(f"Generating {round_type} question. OpenAI key available: {bool(current_openai_key)}")
+    
+    if current_openai_key and openai:
         try:
             logger.info("Using OpenAI for question generation")
             q = _generate_question_openai(round_type, context)

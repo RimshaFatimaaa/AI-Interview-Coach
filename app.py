@@ -263,12 +263,18 @@ def main():
     if st.button("🎯 Generate Question", type="primary"):
         with st.spinner("Generating question..."):
             try:
+                # Debug: Show what we're trying to generate
+                st.write(f"🔍 Debug: Generating {question_type} question for {difficulty} level")
+                
                 # Use LangChain processor
                 langchain_processor = LangChainInterviewProcessor(use_openai=True)
                 question_result = langchain_processor.generate_question_langchain(
                     round_type=question_type,
                     context=f"Software Engineer with {difficulty} level experience"
                 )
+                
+                # Debug: Show the result source
+                st.write(f"🔍 Debug: Question source: {question_result.get('source', 'unknown')}")
                 
                 # Create a simple question object for compatibility
                 class SimpleQuestion:
