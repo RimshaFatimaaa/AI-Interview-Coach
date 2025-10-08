@@ -19,10 +19,16 @@ from notebooks.LLMs_test import generate_question, evaluate_answer
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# Set OpenAI API key from environment variable
-# Make sure to set OPENAI_API_KEY in your environment or .env file
-if "OPENAI_API_KEY" not in os.environ:
-    logger.warning("OPENAI_API_KEY not found in environment variables. Please set it to use OpenAI features.")
+# Set OpenAI API key from Streamlit secrets
+try:
+    import streamlit as st
+    openai_key = st.secrets["OPENAI_API_KEY"]
+    os.environ['OPENAI_API_KEY'] = openai_key
+    logger.info("OpenAI API key loaded from Streamlit secrets")
+except KeyError:
+    logger.warning("OPENAI_API_KEY not found in Streamlit secrets. Please set it to use OpenAI features.")
+except Exception as e:
+    logger.warning(f"Failed to load OpenAI API key: {e}")
 
 
 class LangChainInterviewProcessor:
